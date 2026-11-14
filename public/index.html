@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rastrea tu pedido | Envíos Express</title>
+    <meta
+      name="description"
+      content="Consulta el estatus y la ubicación de tu pedido con el ChatBot de Envíos Express."
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Envíos Express, inicio">
+        <span class="brand-mark" aria-hidden="true">📦</span>
+        <span>Envíos Express</span>
+      </a>
+      <nav class="site-nav" aria-label="Navegación principal">
+        <a href="#rastreo">Rastreo</a>
+        <a href="#ayuda">Ayuda</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="rastreo">
+        <div class="hero-copy">
+          <p class="eyebrow">Atención al cliente 24/7</p>
+          <h1>Tu pedido, <span>siempre localizable.</span></h1>
+          <p class="hero-text">
+            Resuelve tus dudas sobre el rastreo de tus pedidos en segundos. Nuestro ChatBot
+            te dice dónde está tu paquete y cuál es su estatus.
+          </p>
+          <button type="button" class="btn-primary" id="hero-chat" data-chat-open>
+            Consultar CHATBOT
+          </button>
+          <p class="hero-note">
+            Solo necesitas tu ID de pedido. Ejemplo: <strong>PED-1001</strong>.
+          </p>
+        </div>
+
+        <div class="hero-card" aria-hidden="true">
+          <div class="parcel"><span>📦</span></div>
+          <div class="parcel-line">
+            <span class="dot"></span>
+            <span class="track"></span>
+            <span class="dot active"></span>
+          </div>
+          <div class="parcel-labels">
+            <span>Origen</span>
+            <span>En camino</span>
+            <span>Destino</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="features" id="ayuda">
+        <article>
+          <h2>Rastreo inmediato</h2>
+          <p>Consulta la ubicación y el estatus de tu pedido sin esperar a un asesor.</p>
+        </article>
+        <article>
+          <h2>Respuestas claras</h2>
+          <p>El ChatBot te guía con un menú de preguntas frecuentes.</p>
+        </article>
+        <article>
+          <h2>Disponible siempre</h2>
+          <p>Resuelve tus dudas a cualquier hora desde cualquier dispositivo.</p>
+        </article>
+      </section>
+    </main>
+
+    <footer class="site-footer">© 2026 Envíos Express. Todos los derechos reservados.</footer>
+
+    <div class="chat-widget">
+      <section
+        id="chat-panel"
+        class="chat-panel"
+        hidden
+        aria-label="ChatBot de rastreo de pedidos"
+      >
+        <header class="chat-header">
+          <div class="chat-identity">
+            <span class="chat-avatar" aria-hidden="true">🤖</span>
+            <div>
+              <strong>Asistente de pedidos</strong>
+              <span class="chat-online"><span class="status-dot"></span> En línea</span>
+            </div>
+          </div>
+          <button type="button" id="chat-close" class="chat-close" aria-label="Cerrar chat">
+            ×
+          </button>
+        </header>
+
+        <div id="chat-menu" class="chat-menu" aria-live="polite"></div>
+
+        <footer class="chat-footer">Rastreo seguro con tu ID de pedido.</footer>
+      </section>
+
+      <button
+        type="button"
+        id="chat-launcher"
+        class="chat-launcher"
+        aria-controls="chat-panel"
+        aria-expanded="false"
+        data-chat-open
+      >
+        <span class="chat-launcher-icon" aria-hidden="true">💬</span>
+        <span>Consultar CHATBOT</span>
+      </button>
+    </div>
+
+    <script src="/chatbot.js" defer></script>
+  </body>
+</html>
