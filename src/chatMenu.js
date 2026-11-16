@@ -1,6 +1,7 @@
 /**
- * Menú de preguntas del ChatBot (RF_02).
- * La primera pregunta es la definida en RF_03: rastreo por ID de pedido.
+ * Menú de preguntas del ChatBot (RF_03).
+ * Pregunta 1: rastreo por ID (RF_04).
+ * Pregunta 2: dudas generales sobre el pedido (RF_05).
  */
 export const chatQuestions = [
   {
@@ -10,17 +11,10 @@ export const chatQuestions = [
     prompt: 'Ingresa el ID del pedido para saber en dónde se encuentra mi pedido.',
   },
   {
-    id: 'status-help',
-    type: 'info',
-    label: '¿Qué significa cada estatus de mi pedido?',
-    answer:
-      'En preparación: tu pedido se está empacando. En camino: ya salió del almacén. En reparto: está en la ruta de entrega. Entregado: fue recibido en el domicilio.',
-  },
-  {
-    id: 'advisor',
-    type: 'info',
-    label: '¿Cómo puedo contactar a un asesor?',
-    answer:
-      'Si tu consulta no se resuelve con el ChatBot, escribe a soporte@envios-express.example y un asesor te responderá en un máximo de 24 horas.',
+    id: 'order-question',
+    type: 'free-text',
+    label: '¿Duda con respecto a mi pedido?',
+    prompt:
+      'Escribe tu duda con respecto a tu pedido. Por ejemplo: tiempo de llegada, cancelación o reembolso.',
   },
 ];

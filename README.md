@@ -1,51 +1,61 @@
 # ChatBot de rastreo de pedidos
 
 Sistema web que integra un ChatBot en una página de Envíos Express para que los usuarios
-consulten el estatus y la ubicación de sus pedidos sin esperar a un asesor.
+inicien sesión y consulten el estatus, la ubicación y las dudas de sus pedidos sin esperar
+a un asesor.
 
-El proyecto se desarrolló a partir de la especificación `Fundamentos de Mi Proyecto.docx`.
+El proyecto se desarrolló a partir de la especificación `Fundamentos de Mi Proyecto.docx`
+y del stack definido en `AGENTS.md`.
 
 ## Requisitos implementados
 
 | ID | Requisito | Implementación |
 | --- | --- | --- |
-| RF_01 | Mostrar la opción **Consultar CHATBOT** en la página principal | Botón flotante y botón principal en `public/index.html` |
-| RF_02 | Al hacer clic, desplegar el menú de preguntas | Panel del widget + `GET /api/chat/menu` |
-| RF_03 | Preguntar el ID del pedido y mostrar su ubicación/estatus | Formulario del widget + `POST /api/orders/track` |
+| RF_01 | Inicio de sesión con nombre y contraseña | Pantalla de login + `POST /api/auth/login` + JWT |
+| RF_02 | Mostrar la opción **Consultar CHATBOT** en la página principal | Botón principal y botón flotante en `public/index.html` |
+| RF_03 | Al hacer clic, desplegar el menú de preguntas | Panel del widget + `GET /api/chat/menu` |
+| RF_04 | Pregunta 1: rastrear el pedido por ID y mostrar su ubicación/estatus | Formulario del widget + `POST /api/orders/track` |
+| RF_05 | Pregunta 2: resolver dudas generales del pedido | Formulario de texto libre + `POST /api/chat/ask` |
 
 ## Stack
 
 - **Frontend:** HTML, CSS y JavaScript (widget sin dependencias de framework).
 - **Backend:** Node.js + Express.
-- **Base de datos:** MySQL (pedidos de prueba).
-- **Seguridad:** JWT de invitado para las consultas del chatbot.
+- **Base de datos:** SQLite mediante el módulo nativo `node:sqlite` (Node.js 22.13 o superior).
+- **Seguridad:** inicio de sesión con contraseña cifrada (scrypt) y JWT.
 
 ## Estructura del proyecto
 
 ```
 .
+├── data/
+│   └── chatbot.db              # Base de datos SQLite (se crea con npm run db:init)
 ├── db/
-│   ├── schema.sql              # Tabla orders
-│   └── seed.sql                # Pedidos de prueba
+│   ├── schema.sql              # Tablas users y orders
+│   └── seed.sql                # Usuarios y pedidos de prueba
 ├── docs/
 │   └── diagramas.md            # Diagramas Mermaid
 ├── public/
-│   ├── index.html              # Página principal + widget
+│   ├── index.html              # Login + página principal + widget
 │   ├── styles.css
-│   └── chatbot.js              # Lógica del ChatBot
+│   └── chatbot.js              # Sesión, login y lógica del ChatBot
 ├── scripts/
-│   └── init-db.js              # Crea la BD y carga los pedidos de prueba
+│   └── init-db.js              # Reinicia la BD y carga usuarios/pedidos de prueba
 ├── src/
-│   ├── app.js                  # Aplicación Express (repositorio inyectable)
+│   ├── app.js                  # Aplicación Express (repositorios inyectables)
 │   ├── auth.js                 # Emisión y validación de JWT
-│   ├── chatMenu.js             # Menú de preguntas (RF_02)
+│   ├── chatAnswers.js          # Respuestas de RF_05
+│   ├── chatMenu.js             # Menú de preguntas (RF_03)
 │   ├── config.js
+│   ├── passwords.js            # Hash y verificación de contraseñas
 │   ├── server.js               # Arranque del servidor
 │   └── db/
-│       ├── pool.js
-│       └── mysqlOrderRepository.js
+│       ├── sqlite.js           # Apertura de la BD y creación del esquema
+│       ├── sqliteOrderRepository.js
+│       └── sqliteUserRepository.js
 ├── test/
-│   ├── acceptance.test.js      # Pruebas de aceptación de la API
+│   ├── acceptance.test.js      # Pruebas de aceptación PA-1 a PA-5
+│   ├── sqlite.test.js          # Integración con SQLite
 │   ├── widget.test.js          # Pruebas del widget con jsdom
 │   └── support/
 └── package.json
@@ -59,14 +69,24 @@ El proyecto se desarrolló a partir de la especificación `Fundamentos de Mi Pro
    npm install
    ```
 
-2. Copia `.env.example` a `.env` y ajusta las credenciales de MySQL y el secreto JWT.
-   El archivo `.env` no se versiona.
+2. Copia `.env.example` a `.env` y ajusta los valores. El archivo `.env` no se versiona.
 
-3. Inicializa la base de datos y carga los pedidos de prueba:
+   ```env
+   PORT=3000
+   SQLITE_PATH=./data/chatbot.db
+   JWT_SECRET=cambia-esta-clave-por-una-larga-y-aleatoria
+   JWT_EXPIRES_IN=1h
+   ```
+
+3. Inicializa la base de datos SQLite con los usuarios y pedidos de prueba:
 
    ```bash
    npm run db:init
    ```
+
+   > `db:init` reinicia la base de datos de prueba para aplicar el esquema actual.
+   > Detén el servidor antes de ejecutarlo, porque el archivo SQLite queda bloqueado
+   > mientras la aplicación está en ejecución.
 
 4. Arranca el servidor:
 
@@ -74,7 +94,20 @@ El proyecto se desarrolló a partir de la especificación `Fundamentos de Mi Pro
    npm start
    ```
 
-5. Abre `http://localhost:3000`.
+5. Abre `http://localhost:3000` e inicia sesión.
+
+### Usuarios de prueba
+
+Todos usan la contraseña **`pedidos123`**.
+
+| Nombre | Pedido |
+| --- | --- |
+| `ana` | `PED-1001` |
+| `carlos` | `PED-1002` |
+| `maria` | `PED-1003` |
+| `luis` | `PED-1004` |
+
+> Cada usuario solo puede consultar sus propios pedidos.
 
 ### Pedidos de prueba
 
@@ -89,19 +122,30 @@ El proyecto se desarrolló a partir de la especificación `Fundamentos de Mi Pro
 
 | Método | Ruta | Descripción | Auth |
 | --- | --- | --- | --- |
-| `GET` | `/` | Página principal con el widget | No |
-| `POST` | `/api/auth/guest` | Emite un JWT de invitado | No |
+| `GET` | `/` | Página principal con login y widget | No |
+| `POST` | `/api/auth/login` | Inicia sesión con nombre y contraseña | No |
+| `GET` | `/api/auth/me` | Devuelve el usuario de la sesión | Bearer JWT |
 | `GET` | `/api/chat/menu` | Devuelve el menú de preguntas | Bearer JWT |
-| `POST` | `/api/orders/track` | Consulta un pedido por `orderId` | Bearer JWT |
+| `POST` | `/api/orders/track` | Consulta un pedido propio por `orderId` | Bearer JWT |
+| `POST` | `/api/chat/ask` | Responde una duda sobre el pedido | Bearer JWT |
 | `GET` | `/api/health` | Estado del servicio | No |
 
-Ejemplo de rastreo:
+Ejemplo de inicio de sesión y rastreo:
 
 ```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"ana\",\"password\":\"pedidos123\"}"
+
 curl -X POST http://localhost:3000/api/orders/track \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d "{\"orderId\":\"PED-1001\"}"
+
+curl -X POST http://localhost:3000/api/chat/ask \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d "{\"question\":\"¿Cuál es el tiempo de entrega?\"}"
 ```
 
 ## Pruebas
@@ -110,16 +154,21 @@ curl -X POST http://localhost:3000/api/orders/track \
 npm test
 ```
 
-Las pruebas de aceptación usan un repositorio en memoria, por lo que **no requieren MySQL**
-para ejecutarse:
+Las pruebas de aceptación usan repositorios en memoria y las de integración usan SQLite
+en memoria, por lo que **no requieren ningún servidor de base de datos**:
 
-- **PA-01:** la página principal muestra la opción "Consultar CHATBOT" y sus recursos.
-- **PA-02:** al abrir el chatbot se despliega el menú de preguntas (API y widget).
-- **PA-03:** al ingresar un ID válido se muestran estatus y ubicación; los IDs inválidos
-  o inexistentes reciben un mensaje claro; las rutas exigen JWT.
+- **PA-1:** login con nombre y contraseña, rechazo de credenciales incorrectas y cierre de sesión.
+- **PA-2:** la página principal muestra la opción "Consultar CHATBOT".
+- **PA-3:** al abrir el chatbot se despliega el menú con las dos preguntas.
+- **PA-4:** la Pregunta 1 muestra estatus y ubicación; un usuario no puede ver pedidos ajenos.
+- **PA-5:** la Pregunta 2 responde dudas de entrega, cancelación y reembolso.
+- **Integración SQLite:** esquema, seed, login, rastreo y respuestas con la base real.
 
 ## Notas
 
 - `JWT_SECRET` debe cambiarse por una clave larga y aleatoria antes de publicar.
-- El widget obtiene automáticamente un JWT de invitado y lo reutiliza durante la sesión.
+- Las contraseñas se almacenan con hash scrypt y sal; nunca en texto plano.
+- El widget guarda la sesión en `sessionStorage` y la valida contra `/api/auth/me`.
+- Si tu `.env` conserva variables `DB_*` de una versión anterior, se ignoran; la ruta
+  de SQLite se configura con `SQLITE_PATH`.
 - Para producción se recomienda agregar limitación de intentos (rate limiting) y HTTPS.

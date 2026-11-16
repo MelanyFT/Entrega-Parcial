@@ -8,9 +8,8 @@ export function createAuth({ secret, expiresIn = '1h' }) {
   }
 
   return {
-    issueGuestToken() {
-      return jwt.sign({ role: 'guest' }, secret, {
-        subject: 'guest',
+    issueToken(payload) {
+      return jwt.sign(payload, secret, {
         issuer: ISSUER,
         expiresIn,
       });
@@ -24,7 +23,7 @@ export function createAuth({ secret, expiresIn = '1h' }) {
         return res.status(401).json({
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Necesitas una sesión válida para consultar el chat.',
+            message: 'Necesitas iniciar sesión para consultar el chat.',
           },
         });
       }
@@ -36,7 +35,7 @@ export function createAuth({ secret, expiresIn = '1h' }) {
         return res.status(401).json({
           error: {
             code: 'UNAUTHORIZED',
-            message: 'Tu sesión expiró. Vuelve a abrir el chat.',
+            message: 'Tu sesión expiró. Inicia sesión de nuevo.',
           },
         });
       }

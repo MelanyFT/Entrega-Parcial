@@ -88,6 +88,39 @@ body {
   color: var(--brand);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--border);
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.logout-button {
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  text-decoration: underline;
+}
+
 main {
   max-width: 1120px;
   margin: 0 auto;
@@ -264,6 +297,106 @@ main {
   color: var(--muted);
   text-align: center;
   font-size: 0.85rem;
+}
+
+/* ---------- Inicio de sesión ---------- */
+body[data-authenticated="false"] {
+  overflow: hidden;
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(37, 99, 235, 0.18), transparent 26rem),
+    radial-gradient(circle at 80% 85%, rgba(245, 158, 11, 0.16), transparent 24rem),
+    linear-gradient(150deg, #eff6ff, #f8fafc 55%, #eef2ff);
+}
+
+.login-card {
+  width: min(26rem, 100%);
+  padding: 2.2rem;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: calc(var(--radius) + 8px);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.login-card h1 {
+  margin: 0 0 0.4rem;
+  font-size: 1.8rem;
+  letter-spacing: -0.03em;
+}
+
+.login-subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.login-form label {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.login-form input:focus {
+  outline: 3px solid var(--brand-soft);
+  border-color: var(--brand);
+}
+
+.login-submit {
+  width: 100%;
+  margin-top: 0.6rem;
+}
+
+.login-error {
+  margin: 0.3rem 0 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.8rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.login-hint {
+  margin: 1.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 /* ---------- Widget del ChatBot ---------- */
@@ -454,7 +587,8 @@ main {
   color: var(--muted);
 }
 
-.chat-form input {
+.chat-form input,
+.chat-form textarea {
   width: 100%;
   padding: 0.75rem 0.85rem;
   border: 1px solid var(--border);
@@ -464,7 +598,13 @@ main {
   background: #fff;
 }
 
-.chat-form input:focus {
+.chat-form textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.chat-form input:focus,
+.chat-form textarea:focus {
   outline: 3px solid var(--brand-soft);
   border-color: var(--brand);
 }
@@ -570,6 +710,26 @@ main {
   font-size: 0.8rem;
 }
 
+.chat-answer {
+  margin-top: 0.9rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: linear-gradient(160deg, #ffffff, #f8fafc);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.chat-answer h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+}
+
+.chat-answer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .chat-info-title {
   margin: 0 0 0.5rem;
   font-size: 1rem;
@@ -591,6 +751,20 @@ main {
 }
 
 @media (max-width: 760px) {
+  .site-header {
+    flex-wrap: wrap;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .user-menu {
+    padding-left: 0;
+    border-left: 0;
+  }
+
   .hero {
     grid-template-columns: 1fr;
     gap: 2rem;

@@ -1,94 +1,213 @@
 (function (global) {
   'use strict';
 
-  const TOKEN_KEY = 'chatbot.guestToken';
+  const SESSION_KEY = 'chatbot.session';
 
-  function createChatbot({ document: doc, fetch: fetchImpl, storage = null }) {
-    const launcher = doc.getElementById('chat-launcher');
-    const panel = doc.getElementById('chat-panel');
-    const menu = doc.getElementById('chat-menu');
-    const closeButton = doc.getElementById('chat-close');
+  function createApp({ document: doc, fetch: fetchImpl, storage = null }) {
+    const elements = {
+      loginOverlay: doc.getElementById('login-overlay'),
+      loginForm: doc.getElementById('login-form'),
+      username: doc.getElementById('login-username'),
+      password: doc.getElementById('login-password'),
+      loginError: doc.getElementById('login-error'),
+      loginSubmit: doc.getElementById('login-submit'),
+      appShell: doc.getElementById('app-shell'),
+      userMenu: doc.getElementById('user-menu'),
+      userName: doc.getElementById('user-name'),
+      logoutButton: doc.getElementById('logout-button'),
+      launcher: doc.getElementById('chat-launcher'),
+      panel: doc.getElementById('chat-panel'),
+      menu: doc.getElementById('chat-menu'),
+      closeButton: doc.getElementById('chat-close'),
+    };
 
-    if (!launcher || !panel || !menu) return null;
+    if (
+      !elements.loginOverlay ||
+      !elements.loginForm ||
+      !elements.appShell ||
+      !elements.launcher ||
+      !elements.panel ||
+      !elements.menu
+    ) {
+      return null;
+    }
 
     const triggers = Array.from(doc.querySelectorAll('[data-chat-open]'));
-    const state = { open: false, token: null, questions: null };
+    const state = { session: null, open: false, questions: null };
 
-    function readStoredToken() {
+    function readSession() {
       try {
-        return storage ? storage.getItem(TOKEN_KEY) : null;
+        const raw = storage ? storage.getItem(SESSION_KEY) : null;
+        if (!raw) return null;
+        const session = JSON.parse(raw);
+        return session && session.token ? session : null;
       } catch {
         return null;
       }
     }
 
-    function storeToken(token) {
+    function saveSession(session) {
       try {
-        if (storage) storage.setItem(TOKEN_KEY, token);
+        if (storage) storage.setItem(SESSION_KEY, JSON.stringify(session));
       } catch {
-        /* El almacenamiento puede estar bloqueado; la sesión sigue en memoria. */
+        /* La sesión sigue activa en memoria aunque el almacenamiento esté bloqueado. */
       }
     }
 
-    function clearToken() {
+    function clearSession() {
       try {
-        if (storage) storage.removeItem(TOKEN_KEY);
+        if (storage) storage.removeItem(SESSION_KEY);
       } catch {
         /* Sin acción. */
       }
     }
 
-    async function getToken(forceRefresh = false) {
-      if (!forceRefresh && state.token) return state.token;
+    function setSession(session) {
+      state.session = session;
+      doc.body.dataset.authenticated = session ? 'true' : 'false';
+      elements.appShell.hidden = !session;
+      elements.loginOverlay.hidden = Boolean(session);
 
-      if (!forceRefresh) {
-        const stored = readStoredToken();
-        if (stored) {
-          state.token = stored;
-          return stored;
+      if (session) {
+        if (elements.userMenu) elements.userMenu.hidden = false;
+        if (elements.userName) {
+          elements.userName.textContent =
+            session.user.displayName || session.user.username || '';
         }
+      } else {
+        if (elements.userMenu) elements.userMenu.hidden = true;
+        if (elements.userName) elements.userName.textContent = '';
+        setOpen(false);
+        state.questions = null;
+        elements.menu.innerHTML = '';
+      }
+    }
+
+    function showLoginError(message) {
+      if (!elements.loginError) return;
+      elements.loginError.textContent = message;
+      elements.loginError.hidden = false;
+    }
+
+    function clearLoginError() {
+      if (!elements.loginError) return;
+      elements.loginError.textContent = '';
+      elements.loginError.hidden = true;
+    }
+
+    async function login(username, password) {
+      const name = String(username || '').trim();
+
+      if (!name || !password) {
+        showLoginError('Escribe tu nombre y contraseña.');
+        return false;
       }
 
-      const response = await fetchImpl('/api/auth/guest', {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-      });
+      clearLoginError();
+      if (elements.loginSubmit) {
+        elements.loginSubmit.disabled = true;
+        elements.loginSubmit.textContent = 'Entrando…';
+      }
 
-      if (!response.ok) throw new Error('No se pudo iniciar la sesión del chat.');
+      try {
+        const response = await fetchImpl('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username: name, password }),
+        });
+        const data = await response.json().catch(() => ({}));
 
-      const data = await response.json();
-      if (!data || !data.token) throw new Error('La sesión del chat no es válida.');
+        if (!response.ok) {
+          showLoginError(
+            (data.error && data.error.message) ||
+              'El nombre o la contraseña no son correctos.'
+          );
+          return false;
+        }
 
-      state.token = data.token;
-      storeToken(data.token);
-      return state.token;
+        const session = { token: data.token, user: data.user };
+        saveSession(session);
+        setSession(session);
+        return true;
+      } catch {
+        showLoginError('Ocurrió un error de conexión. Intenta de nuevo.');
+        return false;
+      } finally {
+        if (elements.loginSubmit) {
+          elements.loginSubmit.disabled = false;
+          elements.loginSubmit.textContent = 'Entrar';
+        }
+      }
+    }
+
+    async function restoreSession() {
+      const stored = readSession();
+      if (!stored) {
+        setSession(null);
+        return false;
+      }
+
+      try {
+        const response = await fetchImpl('/api/auth/me', {
+          headers: {
+            Accept: 'application/json',
+            Authorization: 'Bearer ' + stored.token,
+          },
+        });
+
+        if (!response.ok) {
+          clearSession();
+          setSession(null);
+          return false;
+        }
+
+        const data = await response.json();
+        const session = { token: stored.token, user: data.user || stored.user };
+        saveSession(session);
+        setSession(session);
+        return true;
+      } catch {
+        clearSession();
+        setSession(null);
+        return false;
+      }
+    }
+
+    function logout() {
+      clearSession();
+      setSession(null);
+      if (elements.loginForm) elements.loginForm.reset();
+      clearLoginError();
+      if (elements.username) elements.username.focus();
     }
 
     async function request(path, options = {}) {
-      const token = await getToken();
+      if (!state.session) throw new Error('UNAUTHENTICATED');
+
       const headers = Object.assign({ Accept: 'application/json' }, options.headers || {}, {
-        Authorization: 'Bearer ' + token,
+        Authorization: 'Bearer ' + state.session.token,
       });
 
       if (options.body) headers['Content-Type'] = 'application/json';
 
-      let response = await fetchImpl(path, Object.assign({}, options, { headers }));
+      const response = await fetchImpl(path, Object.assign({}, options, { headers }));
 
-      // Si el token expiró, se solicita uno nuevo y se repite la consulta una vez.
       if (response.status === 401) {
-        state.token = null;
-        clearToken();
-        const freshToken = await getToken(true);
-        headers.Authorization = 'Bearer ' + freshToken;
-        response = await fetchImpl(path, Object.assign({}, options, { headers }));
+        logout();
+        throw new Error('UNAUTHENTICATED');
       }
 
       return response;
     }
 
     function setOpen(open) {
+      if (open && !state.session) return;
+
       state.open = open;
-      panel.hidden = !open;
+      elements.panel.hidden = !open;
       triggers.forEach((trigger) => trigger.setAttribute('aria-expanded', String(open)));
 
       if (open) {
@@ -105,11 +224,11 @@
     }
 
     function showStatus(text, kind = 'hint') {
-      menu.innerHTML = '';
+      elements.menu.innerHTML = '';
       const paragraph = doc.createElement('p');
       paragraph.className = kind === 'error' ? 'chat-error' : 'chat-hint';
       paragraph.textContent = text;
-      menu.appendChild(paragraph);
+      elements.menu.appendChild(paragraph);
     }
 
     async function loadMenu() {
@@ -131,7 +250,7 @@
     }
 
     function renderMenu() {
-      menu.innerHTML = '';
+      elements.menu.innerHTML = '';
 
       const greeting = doc.createElement('p');
       greeting.className = 'chat-greeting';
@@ -141,7 +260,7 @@
       hint.className = 'chat-hint';
       hint.textContent = 'Selecciona una pregunta:';
 
-      menu.append(greeting, hint);
+      elements.menu.append(greeting, hint);
 
       (state.questions || []).forEach((question) => {
         const button = doc.createElement('button');
@@ -150,13 +269,15 @@
         button.dataset.questionId = question.id;
         button.textContent = question.label;
         button.addEventListener('click', () => selectQuestion(question));
-        menu.appendChild(button);
+        elements.menu.appendChild(button);
       });
     }
 
     function selectQuestion(question) {
       if (question.type === 'order-id') {
         showOrderForm(question);
+      } else if (question.type === 'free-text') {
+        showQuestionForm(question);
       } else {
         showInfo(question);
       }
@@ -168,12 +289,12 @@
       back.className = 'chat-back';
       back.textContent = '← Volver al menú';
       back.addEventListener('click', renderMenu);
-      menu.appendChild(back);
+      elements.menu.appendChild(back);
       return back;
     }
 
     function showOrderForm(question) {
-      menu.innerHTML = '';
+      elements.menu.innerHTML = '';
 
       const prompt = doc.createElement('p');
       prompt.className = 'chat-prompt';
@@ -194,6 +315,7 @@
       input.type = 'text';
       input.placeholder = 'Ej. PED-1001';
       input.autocomplete = 'off';
+      input.maxLength = 32;
       input.required = true;
 
       const submit = doc.createElement('button');
@@ -213,9 +335,55 @@
         trackOrder(input.value, result, submit);
       });
 
-      menu.append(prompt, form, result);
+      elements.menu.append(prompt, form, result);
       addBackButton();
       input.focus();
+    }
+
+    function showQuestionForm(question) {
+      elements.menu.innerHTML = '';
+
+      const prompt = doc.createElement('p');
+      prompt.className = 'chat-prompt';
+      prompt.textContent = question.prompt || question.label;
+
+      const form = doc.createElement('form');
+      form.id = 'question-form';
+      form.className = 'chat-form';
+      form.noValidate = true;
+
+      const label = doc.createElement('label');
+      label.htmlFor = 'order-question';
+      label.textContent = 'Tu duda';
+
+      const textarea = doc.createElement('textarea');
+      textarea.id = 'order-question';
+      textarea.name = 'question';
+      textarea.rows = 3;
+      textarea.maxLength = 500;
+      textarea.placeholder = 'Ej. ¿Cuál es el tiempo de entrega?';
+      textarea.required = true;
+
+      const submit = doc.createElement('button');
+      submit.type = 'submit';
+      submit.className = 'chat-send';
+      submit.textContent = 'Enviar pregunta';
+
+      form.append(label, textarea, submit);
+
+      const result = doc.createElement('div');
+      result.id = 'question-result';
+      result.className = 'question-result';
+      result.setAttribute('aria-live', 'polite');
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        askQuestion(textarea.value, result, submit);
+      });
+
+      elements.menu.append(prompt, form, result);
+      addBackButton();
+      textarea.focus();
     }
 
     async function trackOrder(rawOrderId, container, submit) {
@@ -252,6 +420,43 @@
       } finally {
         submit.disabled = false;
         submit.textContent = 'Consultar estatus';
+      }
+    }
+
+    async function askQuestion(rawQuestion, container, submit) {
+      const question = String(rawQuestion || '').trim();
+
+      if (!question) {
+        renderError(container, 'Escribe tu duda para continuar.');
+        return;
+      }
+
+      submit.disabled = true;
+      submit.textContent = 'Enviando…';
+      container.innerHTML = '';
+
+      try {
+        const response = await request('/api/chat/ask', {
+          method: 'POST',
+          body: JSON.stringify({ question }),
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          renderError(
+            container,
+            (data.error && data.error.message) ||
+              'No pudimos responder tu pregunta. Intenta de nuevo.'
+          );
+          return;
+        }
+
+        renderAnswer(data, container);
+      } catch {
+        renderError(container, 'Ocurrió un error de conexión. Intenta de nuevo.');
+      } finally {
+        submit.disabled = false;
+        submit.textContent = 'Enviar pregunta';
       }
     }
 
@@ -309,6 +514,23 @@
       container.appendChild(card);
     }
 
+    function renderAnswer(data, container) {
+      container.innerHTML = '';
+
+      const card = doc.createElement('article');
+      card.className = 'chat-answer';
+
+      const heading = doc.createElement('h3');
+      heading.textContent = 'Respuesta del asistente';
+
+      const answer = doc.createElement('p');
+      answer.textContent =
+        (data && data.answer) || 'No recibimos una respuesta. Intenta de nuevo.';
+
+      card.append(heading, answer);
+      container.appendChild(card);
+    }
+
     function statusClass(status) {
       const normalized = String(status || '').toLowerCase();
       if (normalized.includes('entregado')) return 'is-delivered';
@@ -326,7 +548,7 @@
     }
 
     function showInfo(question) {
-      menu.innerHTML = '';
+      elements.menu.innerHTML = '';
 
       const title = doc.createElement('h3');
       title.className = 'chat-info-title';
@@ -336,20 +558,36 @@
       answer.className = 'chat-info-text';
       answer.textContent = question.answer || 'Un asesor podrá ayudarte con esta consulta.';
 
-      menu.append(title, answer);
+      elements.menu.append(title, answer);
       addBackButton();
     }
 
+    if (elements.loginForm) {
+      elements.loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        login(elements.username ? elements.username.value : '', elements.password ? elements.password.value : '');
+      });
+    }
+
+    if (elements.logoutButton) {
+      elements.logoutButton.addEventListener('click', logout);
+    }
+
     triggers.forEach((trigger) => trigger.addEventListener('click', toggle));
-    if (closeButton) closeButton.addEventListener('click', () => setOpen(false));
+    if (elements.closeButton) {
+      elements.closeButton.addEventListener('click', () => setOpen(false));
+    }
 
     doc.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && state.open) setOpen(false);
     });
 
-    setOpen(false);
+    setSession(null);
 
     return {
+      login,
+      logout,
+      restoreSession,
       open: () => setOpen(true),
       close: () => setOpen(false),
       toggle,
@@ -366,15 +604,18 @@
       }
     })();
 
-    global.chatbot = createChatbot({
+    const app = createApp({
       document: global.document,
       fetch: global.fetch.bind(global),
       storage,
     });
+
+    global.chatbot = app;
+    if (app) app.restoreSession();
   }
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { createChatbot };
+    module.exports = { createApp };
   }
 
   if (typeof window !== 'undefined' && window.document) {
