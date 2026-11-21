@@ -40,6 +40,8 @@ y del stack definido en `AGENTS.md`.
 │   ├── styles.css
 │   └── chatbot.js              # Sesión, login y lógica del ChatBot
 ├── scripts/
+│   ├── create-database.js      # Crea/resetea la BD (opciones --reset y --path)
+│   ├── export-diagrams.ps1     # Exporta los diagramas Mermaid a PNG
 │   └── init-db.js              # Reinicia la BD y carga usuarios/pedidos de prueba
 ├── src/
 │   ├── app.js                  # Aplicación Express (repositorios inyectables)
@@ -100,12 +102,23 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\export-diagrams.ps
 3. Inicializa la base de datos SQLite con los usuarios y pedidos de prueba:
 
    ```bash
-   npm run db:init
+   npm run db:init        # reinicia la BD (comando original)
+   npm run db:create      # crea la BD solo si no existe
+   npm run db:reset       # borra y vuelve a crear la BD
    ```
 
-   > `db:init` reinicia la base de datos de prueba para aplicar el esquema actual.
-   > Detén el servidor antes de ejecutarlo, porque el archivo SQLite queda bloqueado
-   > mientras la aplicación está en ejecución.
+   El script `scripts/create-database.js` acepta opciones:
+
+   ```bash
+   node scripts/create-database.js                       # crear si no existe
+   node scripts/create-database.js --reset               # reiniciar
+   node scripts/create-database.js --path ./data/otra.db # ruta personalizada
+   node scripts/create-database.js --help                # ayuda
+   ```
+
+   > Todos los comandos detienen antes el servidor, porque el archivo SQLite queda
+   > bloqueado mientras la aplicación está en ejecución. `.env` no se modifica:
+   > la ruta se toma de `SQLITE_PATH` o de `./data/chatbot.db`.
 
 4. Arranca el servidor:
 

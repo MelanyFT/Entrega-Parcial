@@ -9,7 +9,9 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test": "node --test \"test/**/*.test.js\"",
-    "db:init": "node scripts/init-db.js"
+    "db:init": "node scripts/init-db.js",
+    "db:create": "node scripts/create-database.js",
+    "db:reset": "node scripts/create-database.js --reset"
   },
   "engines": {
     "node": ">=22.13.0"
