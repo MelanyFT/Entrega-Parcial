@@ -1,6 +1,6 @@
 # ChatBot de rastreo de pedidos
 
-Sistema web que integra un ChatBot en una página de Envíos Express para que los usuarios
+Sistema web que integra un ChatBot en una página de EntregaYa (TrackBot) para que los usuarios
 inicien sesión y consulten el estatus, la ubicación y las dudas de sus pedidos sin esperar
 a un asesor.
 
@@ -12,7 +12,7 @@ y del stack definido en `AGENTS.md`.
 | ID | Requisito | Implementación |
 | --- | --- | --- |
 | RF_01 | Inicio de sesión con nombre y contraseña | Pantalla de login + `POST /api/auth/login` + JWT |
-| RF_02 | Mostrar la opción **Consultar CHATBOT** en la página principal | Botón principal y botón flotante en `public/index.html` |
+| RF_02 | Mostrar la opción **Consultar CHATBOT** en la página principal | Buscador principal, tarjeta del asistente y botón flotante en `public/index.html` |
 | RF_03 | Al hacer clic, desplegar el menú de preguntas | Panel del widget + `GET /api/chat/menu` |
 | RF_04 | Pregunta 1: rastrear el pedido por ID y mostrar su ubicación/estatus | Formulario del widget + `POST /api/orders/track` |
 | RF_05 | Pregunta 2: resolver dudas generales del pedido | Formulario de texto libre + `POST /api/chat/ask` |
@@ -59,6 +59,25 @@ y del stack definido en `AGENTS.md`.
 │   ├── widget.test.js          # Pruebas del widget con jsdom
 │   └── support/
 └── package.json
+```
+
+## Diagramas
+
+La documentación de arquitectura, modelo de datos, clases e interfaces está en
+[`docs/diagramas.md`](docs/diagramas.md). Incluye diagramas Mermaid de:
+
+- Casos de uso.
+- Arquitectura general por capas.
+- Modelo entidad-relación y estados del pedido.
+- Clases del backend y contratos de los repositorios.
+- Secuencias de inicio de sesión, rastreo y dudas.
+- Interfaces y contratos HTTP.
+
+Las versiones exportadas en PNG están en [`docs/diagramas/`](docs/diagramas/). Para
+regenerarlas después de editar el Markdown:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\export-diagrams.ps1
 ```
 
 ## Configuración

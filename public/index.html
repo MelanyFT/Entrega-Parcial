@@ -3,48 +3,153 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Rastrea tu pedido | Envíos Express</title>
+    <title>TrackBot | EntregaYa</title>
     <meta
       name="description"
-      content="Consulta el estatus y la ubicación de tu pedido con el ChatBot de Envíos Express."
+      content="Rastrea tus pedidos y resuelve tus dudas de entrega con TrackBot, el asistente logístico de EntregaYa."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body data-authenticated="false">
+    <!-- Sprite de iconos: evita depender de una CDN de iconos. -->
+    <svg class="svg-sprite" aria-hidden="true" focusable="false">
+      <symbol id="icon-box" viewBox="0 0 24 24">
+        <path d="M21 8.5 12 3 3 8.5v7L12 21l9-5.5z" />
+        <path d="m3 8.5 9 5 9-5" />
+        <path d="M12 13.5V21" />
+      </symbol>
+      <symbol id="icon-radar" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="8" />
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 4v4M20 12h-4" />
+      </symbol>
+      <symbol id="icon-arrow" viewBox="0 0 24 24">
+        <path d="M5 12h14" />
+        <path d="m13 6 6 6-6 6" />
+      </symbol>
+      <symbol id="icon-chat" viewBox="0 0 24 24">
+        <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.6 8.6 0 0 1-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1 1 21 11.5z" />
+      </symbol>
+      <symbol id="icon-pin" viewBox="0 0 24 24">
+        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </symbol>
+      <symbol id="icon-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </symbol>
+      <symbol id="icon-truck" viewBox="0 0 24 24">
+        <path d="M3 6h11v11H3z" />
+        <path d="M14 9h4l3 3v5h-7" />
+        <circle cx="7" cy="18" r="2" />
+        <circle cx="17" cy="18" r="2" />
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <path d="m4 12 5 5L20 6" />
+      </symbol>
+      <symbol id="icon-home" viewBox="0 0 24 24">
+        <path d="m3 11 9-8 9 8" />
+        <path d="M5 10v10h14V10" />
+      </symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24">
+        <path d="M12 3 5 6v5c0 5 3.5 8.5 7 10 3.5-1.5 7-5 7-10V6z" />
+        <path d="m9 12 2 2 4-4" />
+      </symbol>
+      <symbol id="icon-sparkles" viewBox="0 0 24 24">
+        <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+        <path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" />
+      </symbol>
+      <symbol id="icon-send" viewBox="0 0 24 24">
+        <path d="m22 2-7 20-4-9-9-4z" />
+        <path d="M22 2 11 13" />
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24">
+        <path d="M18 6 6 18M6 6l12 12" />
+      </symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+      </symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24">
+        <rect x="4" y="10" width="16" height="11" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </symbol>
+      <symbol id="icon-satellite" viewBox="0 0 24 24">
+        <path d="m13 7 4 4M8 12l4 4M6 18l-3 3M4 14l6 6M14 4l6 6M9 9 6 6M15 15l3 3" />
+      </symbol>
+      <symbol id="icon-calendar" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M16 3v4M8 3v4M3 11h18" />
+      </symbol>
+      <symbol id="icon-bolt" viewBox="0 0 24 24">
+        <path d="m13 2-9 12h7l-1 8 9-12h-7z" />
+      </symbol>
+      <symbol id="icon-star" viewBox="0 0 24 24">
+        <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z" />
+      </symbol>
+    </svg>
+
     <section id="login-overlay" class="login-overlay" aria-labelledby="login-title">
+      <div class="login-glow login-glow-a" aria-hidden="true"></div>
+      <div class="login-glow login-glow-b" aria-hidden="true"></div>
+
       <div class="login-card">
         <div class="login-brand">
-          <span class="brand-mark" aria-hidden="true">📦</span>
-          <span>Envíos Express</span>
+          <span class="brand-mark" aria-hidden="true">
+            <svg class="icon"><use href="#icon-box"></use></svg>
+          </span>
+          <div class="brand-text">
+            <strong>EntregaYa</strong>
+            <small>TrackBot Logística</small>
+          </div>
         </div>
+
+        <span class="login-badge">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          Red logística activa
+        </span>
+
         <h1 id="login-title">Inicia sesión</h1>
         <p class="login-subtitle">
-          Consulta el estatus y la ubicación de tus pedidos.
+          Consulta el estatus, la ubicación y las dudas de tus pedidos con TrackBot.
         </p>
 
         <form id="login-form" class="login-form" novalidate>
           <label for="login-username">Nombre</label>
-          <input
-            id="login-username"
-            name="username"
-            type="text"
-            autocomplete="username"
-            placeholder="Ej. ana"
-            required
-          />
+          <div class="input-shell">
+            <svg class="icon" aria-hidden="true"><use href="#icon-user"></use></svg>
+            <input
+              id="login-username"
+              name="username"
+              type="text"
+              autocomplete="username"
+              placeholder="Ej. ana"
+              required
+            />
+          </div>
 
           <label for="login-password">Contraseña</label>
-          <input
-            id="login-password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Tu contraseña"
-            required
-          />
+          <div class="input-shell">
+            <svg class="icon" aria-hidden="true"><use href="#icon-lock"></use></svg>
+            <input
+              id="login-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Tu contraseña"
+              required
+            />
+          </div>
 
           <button type="submit" id="login-submit" class="btn-primary login-submit">
             Entrar
+            <svg class="icon" aria-hidden="true"><use href="#icon-arrow"></use></svg>
           </button>
 
           <p id="login-error" class="login-error" role="alert" hidden></p>
@@ -59,18 +164,30 @@
 
     <div id="app-shell" hidden>
       <header class="site-header">
-        <a class="brand" href="/" aria-label="Envíos Express, inicio">
-          <span class="brand-mark" aria-hidden="true">📦</span>
-          <span>Envíos Express</span>
+        <a class="brand" href="/" aria-label="EntregaYa, inicio">
+          <span class="brand-mark" aria-hidden="true">
+            <svg class="icon"><use href="#icon-box"></use></svg>
+          </span>
+          <span class="brand-text">
+            <strong>EntregaYa</strong>
+            <small>TrackBot Logística</small>
+          </span>
         </a>
 
+        <nav class="site-nav" aria-label="Navegación principal">
+          <a href="#rastreo">Rastreo</a>
+          <a href="#ayuda">Asistencia</a>
+          <a href="#garantia">Garantía</a>
+        </nav>
+
         <div class="header-actions">
-          <nav class="site-nav" aria-label="Navegación principal">
-            <a href="#rastreo">Rastreo</a>
-            <a href="#ayuda">Ayuda</a>
-          </nav>
+          <span class="network-pill">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            Red activa
+          </span>
 
           <div id="user-menu" class="user-menu" hidden>
+            <span class="user-avatar" aria-hidden="true">👤</span>
             <span id="user-name" class="user-name"></span>
             <button type="button" id="logout-button" class="logout-button">
               Cerrar sesión
@@ -81,54 +198,352 @@
 
       <main>
         <section class="hero" id="rastreo">
-          <div class="hero-copy">
-            <p class="eyebrow">Atención al cliente 24/7</p>
-            <h1>Tu pedido, <span>siempre localizable.</span></h1>
-            <p class="hero-text">
-              Resuelve tus dudas sobre el rastreo de tus pedidos en segundos. Nuestro
-              ChatBot te dice dónde está tu paquete y cuál es su estatus.
-            </p>
-            <button type="button" class="btn-primary" id="hero-chat" data-chat-open>
-              Consultar CHATBOT
-            </button>
-            <p class="hero-note">
-              Solo necesitas tu ID de pedido. Ejemplo: <strong>PED-1001</strong>.
-            </p>
+          <div class="hero-badge">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            Red logística EntregaYa activa
           </div>
 
-          <div class="hero-card" aria-hidden="true">
-            <div class="parcel"><span>📦</span></div>
-            <div class="parcel-line">
-              <span class="dot"></span>
-              <span class="track"></span>
-              <span class="dot active"></span>
+          <h1>
+            Rastreo inteligente y <span>asistencia en tiempo real</span> para tus
+            pedidos
+          </h1>
+
+          <p class="hero-text">
+            Monitorea el trayecto de tu paquete y resuelve cualquier duda de entrega
+            en segundos con nuestro asistente conversacional.
+          </p>
+
+          <form id="tracking-search-form" class="tracking-search" novalidate>
+            <div class="tracking-field">
+              <svg class="icon" aria-hidden="true"><use href="#icon-radar"></use></svg>
+              <label class="sr-only" for="tracking-input">Código de pedido</label>
+              <input
+                id="tracking-input"
+                name="trackingId"
+                type="text"
+                autocomplete="off"
+                maxlength="32"
+                placeholder="Escribe tu código de pedido, ej: PED-1001"
+              />
             </div>
-            <div class="parcel-labels">
-              <span>Origen</span>
-              <span>En camino</span>
-              <span>Destino</span>
-            </div>
+            <button type="submit" class="btn-primary">
+              Rastrear pedido
+              <svg class="icon" aria-hidden="true"><use href="#icon-arrow"></use></svg>
+            </button>
+          </form>
+
+          <div class="quick-pills" aria-label="Consultas frecuentes">
+            <span>Consultas frecuentes:</span>
+            <button
+              type="button"
+              class="quick-pill"
+              data-quick-question="order-status"
+            >
+              ¿Dónde está mi pedido?
+            </button>
+            <button
+              type="button"
+              class="quick-pill"
+              data-quick-question="free-text"
+              data-quick-prompt="¿Cuál es el tiempo estimado de entrega?"
+            >
+              ¿Tiempo estimado de entrega?
+            </button>
+            <button
+              type="button"
+              class="quick-pill"
+              data-quick-question="free-text"
+              data-quick-prompt="Quiero modificar la entrega de mi pedido."
+            >
+              Modificar entrega
+            </button>
           </div>
+
+          <div
+            id="tracking-feedback"
+            class="tracking-feedback"
+            role="status"
+            aria-live="polite"
+            hidden
+          ></div>
+        </section>
+
+        <section class="dashboard" aria-label="Panel de seguimiento">
+          <div class="dashboard-main">
+            <article class="panel order-showcase is-empty" id="order-showcase">
+              <div class="showcase-head">
+                <div>
+                  <p class="panel-kicker">Pedido activo</p>
+                  <h2 id="showcase-order-id">Sin pedido consultado</h2>
+                  <span id="showcase-status" class="status-badge is-pending">
+                    Sin consultar
+                  </span>
+                </div>
+
+                <div class="eta-box">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-clock"></use></svg>
+                  <div>
+                    <span>Llegada estimada</span>
+                    <strong id="showcase-eta">—</strong>
+                  </div>
+                </div>
+              </div>
+
+              <p class="showcase-sub">
+                <span>Servicio:</span> EntregaYa Express Direct ·
+                <span id="showcase-updated">Consulta tu pedido para ver el detalle</span>
+              </p>
+
+              <div class="timeline" id="showcase-timeline">
+                <div class="timeline-step" data-step="1">
+                  <span class="timeline-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-box"></use></svg>
+                  </span>
+                  <div>
+                    <strong>Pedido recibido</strong>
+                    <small>Confirmación</small>
+                  </div>
+                </div>
+                <div class="timeline-step" data-step="2">
+                  <span class="timeline-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-check"></use></svg>
+                  </span>
+                  <div>
+                    <strong>Procesado</strong>
+                    <small>Hub logístico</small>
+                  </div>
+                </div>
+                <div class="timeline-step" data-step="3">
+                  <span class="timeline-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-truck"></use></svg>
+                  </span>
+                  <div>
+                    <strong>En camino</strong>
+                    <small>Reparto asignado</small>
+                  </div>
+                </div>
+                <div class="timeline-step" data-step="4">
+                  <span class="timeline-icon">
+                    <svg class="icon" aria-hidden="true"><use href="#icon-home"></use></svg>
+                  </span>
+                  <div>
+                    <strong>Entrega</strong>
+                    <small>Destino</small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="showcase-details">
+                <div class="detail">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-pin"></use></svg>
+                  <div>
+                    <span>Ubicación actual</span>
+                    <strong id="showcase-location">
+                      Consulta tu pedido para ver la ubicación
+                    </strong>
+                  </div>
+                </div>
+                <div class="detail">
+                  <svg class="icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+                  <div>
+                    <span>Entrega protegida</span>
+                    <strong>Garantía logística activa</strong>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel telemetry">
+              <div class="panel-head">
+                <div class="panel-title">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#icon-satellite"></use>
+                  </svg>
+                  <h2>Rastreo satelital en vivo</h2>
+                </div>
+                <span class="mono-chip" id="telemetry-chip">Esperando consulta</span>
+              </div>
+
+              <div class="map" aria-hidden="true">
+                <div class="map-grid"></div>
+                <div class="map-route"></div>
+                <span class="map-pin map-pin-start"></span>
+                <span class="map-pin map-pin-end"></span>
+                <span class="map-vehicle">
+                  <svg class="icon"><use href="#icon-truck"></use></svg>
+                </span>
+                <div class="map-overlay">
+                  <div>
+                    <span>Vehículo</span>
+                    <strong id="telemetry-location">Sin ruta activa</strong>
+                  </div>
+                  <span class="map-eta" id="telemetry-eta">—</span>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <aside class="dashboard-side">
+            <article class="panel assistant-card">
+              <div class="assistant-head">
+                <div class="assistant-avatar">
+                  <svg class="icon" aria-hidden="true">
+                    <use href="#icon-sparkles"></use>
+                  </svg>
+                </div>
+                <div>
+                  <strong>TrackBot AI</strong>
+                  <span>
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    En línea · Respuesta instantánea
+                  </span>
+                </div>
+                <span class="version-chip">v2.4</span>
+              </div>
+
+              <div class="assistant-body">
+                <p class="assistant-greeting" id="assistant-greeting">
+                  Hola, soy tu asistente de envíos. ¿En qué puedo ayudarte hoy con tu
+                  paquete?
+                </p>
+                <div class="assistant-bubble">
+                  <span>Resumen de sincronización</span>
+                  <strong id="assistant-summary">
+                    Consulta un pedido para sincronizar su estatus.
+                  </strong>
+                </div>
+                <button type="button" class="assistant-cta" data-chat-open>
+                  Consultar CHATBOT
+                  <svg class="icon" aria-hidden="true"><use href="#icon-arrow"></use></svg>
+                </button>
+              </div>
+
+              <div class="assistant-suggestions">
+                <span>Sugerencias rápidas:</span>
+                <button type="button" data-quick-question="order-status">
+                  ¿Dónde está mi pedido?
+                </button>
+                <button
+                  type="button"
+                  data-quick-question="free-text"
+                  data-quick-prompt="¿Cuál es el tiempo estimado de entrega?"
+                >
+                  ¿Cuál es el tiempo de entrega?
+                </button>
+                <button
+                  type="button"
+                  data-quick-question="free-text"
+                  data-quick-prompt="Quiero cancelar mi pedido."
+                >
+                  Necesito cancelar mi pedido
+                </button>
+              </div>
+            </article>
+
+            <article class="panel guarantee-card" id="garantia">
+              <svg class="icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+              <div>
+                <strong>Garantía de entrega protegida</strong>
+                <span>Seguro logístico contra extravío 100% activo</span>
+              </div>
+            </article>
+          </aside>
         </section>
 
         <section class="features" id="ayuda">
-          <article>
-            <h2>Rastreo inmediato</h2>
-            <p>Consulta la ubicación y el estatus de tu pedido sin esperar a un asesor.</p>
-          </article>
-          <article>
-            <h2>Respuestas claras</h2>
-            <p>El ChatBot te guía con un menú de preguntas frecuentes.</p>
-          </article>
-          <article>
-            <h2>Disponible siempre</h2>
-            <p>Resuelve tus dudas a cualquier hora desde cualquier dispositivo.</p>
-          </article>
+          <div class="features-head">
+            <span>Tecnología de vanguardia</span>
+            <h2>Logística inteligente diseñada para tu tranquilidad</h2>
+            <p>
+              Respaldado por algoritmos de enrutamiento predictivo y soporte
+              automatizado en cada paso.
+            </p>
+          </div>
+
+          <div class="feature-grid">
+            <article>
+              <span class="feature-icon is-blue">
+                <svg class="icon" aria-hidden="true"><use href="#icon-chat"></use></svg>
+              </span>
+              <h3>Asistencia 24/7 vía Chatbot</h3>
+              <p>
+                Resuelve dudas al instante sin tiempos de espera. TrackBot procesa
+                números de guía y responde en lenguaje natural.
+              </p>
+              <span class="feature-link">
+                Conoce el agente de IA
+                <svg class="icon" aria-hidden="true"><use href="#icon-arrow"></use></svg>
+              </span>
+            </article>
+
+            <article>
+              <span class="feature-icon is-green">
+                <svg class="icon" aria-hidden="true">
+                  <use href="#icon-satellite"></use>
+                </svg>
+              </span>
+              <h3>Actualizaciones en vivo</h3>
+              <p>
+                Telemetría precisa por GPS y notificaciones con ETA dinámico ajustado
+                a las condiciones de tráfico.
+              </p>
+              <span class="feature-link">
+                Ver precisión de telemetría
+                <svg class="icon" aria-hidden="true"><use href="#icon-arrow"></use></svg>
+              </span>
+            </article>
+
+            <article>
+              <span class="feature-icon is-violet">
+                <svg class="icon" aria-hidden="true">
+                  <use href="#icon-calendar"></use></svg>
+              </span>
+              <h3>Gestión rápida de cambios</h3>
+              <p>
+                ¿No estarás en casa? Consulta con TrackBot las opciones disponibles
+                para tu entrega antes de que el repartidor arribe.
+              </p>
+              <span class="feature-link">
+                Gestionar mis políticas
+                <svg class="icon" aria-hidden="true"><use href="#icon-arrow"></use></svg>
+              </span>
+            </article>
+          </div>
+        </section>
+
+        <section class="stats-band" aria-label="Indicadores de servicio">
+          <div>
+            <strong>99.4%</strong>
+            <span>Entregas a tiempo</span>
+          </div>
+          <div>
+            <strong>&lt; 30s</strong>
+            <span>Resolución con TrackBot</span>
+          </div>
+          <div>
+            <strong>1.2M+</strong>
+            <span>Paquetes monitoreados</span>
+          </div>
         </section>
       </main>
 
       <footer class="site-footer">
-        © 2026 Envíos Express. Todos los derechos reservados.
+        <div class="footer-inner">
+          <div class="footer-brand">
+            <span class="brand-mark" aria-hidden="true">
+              <svg class="icon"><use href="#icon-box"></use></svg>
+            </span>
+            <div>
+              <strong>TrackBot Logística</strong>
+              <span>© 2026 EntregaYa Telemetría &amp; AI</span>
+            </div>
+          </div>
+          <div class="footer-links">
+            <a href="#ayuda">Centro de ayuda</a>
+            <a href="#rastreo">Rastreo</a>
+            <a href="#garantia">Garantía</a>
+          </div>
+        </div>
       </footer>
 
       <div class="chat-widget">
@@ -140,20 +555,33 @@
         >
           <header class="chat-header">
             <div class="chat-identity">
-              <span class="chat-avatar" aria-hidden="true">🤖</span>
+              <span class="chat-avatar" aria-hidden="true">
+                <svg class="icon"><use href="#icon-sparkles"></use></svg>
+              </span>
               <div>
-                <strong>Asistente de pedidos</strong>
-                <span class="chat-online"><span class="status-dot"></span> En línea</span>
+                <strong>TrackBot AI</strong>
+                <span class="chat-online">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  En línea · Respuesta instantánea
+                </span>
               </div>
             </div>
-            <button type="button" id="chat-close" class="chat-close" aria-label="Cerrar chat">
-              ×
+            <button
+              type="button"
+              id="chat-close"
+              class="chat-close"
+              aria-label="Cerrar chat"
+            >
+              <svg class="icon" aria-hidden="true"><use href="#icon-close"></use></svg>
             </button>
           </header>
 
           <div id="chat-menu" class="chat-menu" aria-live="polite"></div>
 
-          <footer class="chat-footer">Rastreo seguro con tu ID de pedido.</footer>
+          <footer class="chat-footer">
+            <svg class="icon" aria-hidden="true"><use href="#icon-shield"></use></svg>
+            Rastreo seguro con tu ID de pedido
+          </footer>
         </section>
 
         <button
@@ -164,7 +592,9 @@
           aria-expanded="false"
           data-chat-open
         >
-          <span class="chat-launcher-icon" aria-hidden="true">💬</span>
+          <span class="chat-launcher-icon" aria-hidden="true">
+            <svg class="icon"><use href="#icon-chat"></use></svg>
+          </span>
           <span>Consultar CHATBOT</span>
         </button>
       </div>

@@ -19,6 +19,23 @@
       panel: doc.getElementById('chat-panel'),
       menu: doc.getElementById('chat-menu'),
       closeButton: doc.getElementById('chat-close'),
+      trackingForm: doc.getElementById('tracking-search-form'),
+      trackingInput: doc.getElementById('tracking-input'),
+      trackingFeedback: doc.getElementById('tracking-feedback'),
+      orderShowcase: doc.getElementById('order-showcase'),
+      showcaseOrderId: doc.getElementById('showcase-order-id'),
+      showcaseStatus: doc.getElementById('showcase-status'),
+      showcaseEta: doc.getElementById('showcase-eta'),
+      showcaseUpdated: doc.getElementById('showcase-updated'),
+      showcaseLocation: doc.getElementById('showcase-location'),
+      timelineSteps: Array.from(
+        doc.querySelectorAll('#showcase-timeline .timeline-step')
+      ),
+      telemetryLocation: doc.getElementById('telemetry-location'),
+      telemetryEta: doc.getElementById('telemetry-eta'),
+      telemetryChip: doc.getElementById('telemetry-chip'),
+      assistantSummary: doc.getElementById('assistant-summary'),
+      assistantGreeting: doc.getElementById('assistant-greeting'),
     };
 
     if (
@@ -33,7 +50,7 @@
     }
 
     const triggers = Array.from(doc.querySelectorAll('[data-chat-open]'));
-    const state = { session: null, open: false, questions: null };
+    const state = { session: null, open: false, questions: null, menuPromise: null };
 
     function readSession() {
       try {
@@ -74,12 +91,20 @@
           elements.userName.textContent =
             session.user.displayName || session.user.username || '';
         }
+        if (elements.assistantGreeting) {
+          const name = session.user.displayName || session.user.username || '';
+          elements.assistantGreeting.textContent = name
+            ? `Hola ${name}, soy TrackBot. ¿En qué puedo ayudarte hoy con tu paquete?`
+            : 'Hola, soy TrackBot. ¿En qué puedo ayudarte hoy con tu paquete?';
+        }
       } else {
         if (elements.userMenu) elements.userMenu.hidden = true;
         if (elements.userName) elements.userName.textContent = '';
         setOpen(false);
         state.questions = null;
+        state.menuPromise = null;
         elements.menu.innerHTML = '';
+        resetDashboard();
       }
     }
 
@@ -214,7 +239,40 @@
         if (state.questions) {
           renderMenu();
         } else {
-          loadMenu();
+          ensureQuestions();
+        }
+      }
+    }
+
+    function ensureQuestions() {
+      if (state.questions) return Promise.resolve(state.questions);
+
+      if (!state.menuPromise) {
+        state.menuPromise = loadMenu().finally(() => {
+          state.menuPromise = null;
+        });
+      }
+
+      return state.menuPromise;
+    }
+
+    async function openQuestionByType(type, prompt) {
+      if (!state.session) return;
+
+      setOpen(true);
+      const questions = await ensureQuestions();
+      const question =
+        questions.find((item) => item.type === type) || questions[0];
+
+      if (!question) return;
+
+      selectQuestion(question);
+
+      if (prompt) {
+        const field = doc.getElementById('order-question');
+        if (field) {
+          field.value = prompt;
+          field.focus();
         }
       }
     }
@@ -241,11 +299,13 @@
         const data = await response.json();
         state.questions = Array.isArray(data.questions) ? data.questions : [];
         renderMenu();
+        return state.questions;
       } catch {
         showStatus(
           'No pudimos cargar el menú de preguntas. Revisa tu conexión e intenta de nuevo.',
           'error'
         );
+        return [];
       }
     }
 
@@ -386,16 +446,21 @@
       textarea.focus();
     }
 
-    async function trackOrder(rawOrderId, container, submit) {
+    async function trackOrder(rawOrderId, container, submit, options = {}) {
       const orderId = String(rawOrderId || '').trim();
+
+      if (options.feedback && container) container.hidden = false;
 
       if (!orderId) {
         renderError(container, 'Escribe el ID de tu pedido para continuar.');
         return;
       }
 
-      submit.disabled = true;
-      submit.textContent = 'Consultando…';
+      const originalText = submit ? submit.textContent : '';
+      if (submit) {
+        submit.disabled = true;
+        submit.textContent = 'Consultando…';
+      }
       container.innerHTML = '';
 
       try {
@@ -415,11 +480,18 @@
         }
 
         renderOrder(data.order, container);
+        renderShowcase(data.order);
+
+        if (elements.trackingInput) {
+          elements.trackingInput.value = data.order.id;
+        }
       } catch {
         renderError(container, 'Ocurrió un error de conexión. Intenta de nuevo.');
       } finally {
-        submit.disabled = false;
-        submit.textContent = 'Consultar estatus';
+        if (submit) {
+          submit.disabled = false;
+          submit.textContent = originalText || 'Consultar estatus';
+        }
       }
     }
 
@@ -514,6 +586,116 @@
       container.appendChild(card);
     }
 
+    function renderShowcase(order) {
+      if (!order || !elements.orderShowcase) return;
+
+      elements.orderShowcase.classList.remove('is-empty');
+
+      if (elements.showcaseOrderId) {
+        elements.showcaseOrderId.textContent = 'Envío #' + order.id;
+      }
+      if (elements.showcaseStatus) {
+        elements.showcaseStatus.className = 'status-badge ' + statusClass(order.status);
+        elements.showcaseStatus.textContent = order.status || 'Sin estatus';
+      }
+      if (elements.showcaseEta) {
+        elements.showcaseEta.textContent = order.estimatedDelivery
+          ? formatDate(order.estimatedDelivery)
+          : 'Por confirmar';
+      }
+      if (elements.showcaseUpdated) {
+        elements.showcaseUpdated.textContent = order.updatedAt
+          ? 'Actualizado ' + formatDate(order.updatedAt)
+          : 'Actualización reciente';
+      }
+      if (elements.showcaseLocation) {
+        elements.showcaseLocation.textContent =
+          order.location || 'Ubicación no disponible';
+      }
+      if (elements.telemetryLocation) {
+        elements.telemetryLocation.textContent = order.location || 'Ruta sin datos';
+      }
+      if (elements.telemetryEta) {
+        elements.telemetryEta.textContent = order.estimatedDelivery
+          ? formatDate(order.estimatedDelivery)
+          : '—';
+      }
+      if (elements.telemetryChip) {
+        elements.telemetryChip.textContent = 'GPS · ' + order.id;
+      }
+      if (elements.assistantSummary) {
+        elements.assistantSummary.textContent =
+          'Pedido ' +
+          order.id +
+          ' · ' +
+          (order.status || 'Sin estatus') +
+          ' · ' +
+          (order.location || 'Sin ubicación');
+      }
+
+      const currentStep = statusStep(order.status);
+      elements.timelineSteps.forEach((step) => {
+        const value = Number(step.dataset.step);
+        step.classList.toggle('is-done', value < currentStep);
+        step.classList.toggle('is-active', value === currentStep);
+      });
+    }
+
+    function resetDashboard() {
+      if (elements.orderShowcase) {
+        elements.orderShowcase.classList.add('is-empty');
+      }
+      if (elements.showcaseOrderId) {
+        elements.showcaseOrderId.textContent = 'Sin pedido consultado';
+      }
+      if (elements.showcaseStatus) {
+        elements.showcaseStatus.className = 'status-badge is-pending';
+        elements.showcaseStatus.textContent = 'Sin consultar';
+      }
+      if (elements.showcaseEta) elements.showcaseEta.textContent = '—';
+      if (elements.showcaseUpdated) {
+        elements.showcaseUpdated.textContent = 'Consulta tu pedido para ver el detalle';
+      }
+      if (elements.showcaseLocation) {
+        elements.showcaseLocation.textContent =
+          'Consulta tu pedido para ver la ubicación';
+      }
+      if (elements.telemetryLocation) {
+        elements.telemetryLocation.textContent = 'Sin ruta activa';
+      }
+      if (elements.telemetryEta) elements.telemetryEta.textContent = '—';
+      if (elements.telemetryChip) {
+        elements.telemetryChip.textContent = 'Esperando consulta';
+      }
+      if (elements.assistantSummary) {
+        elements.assistantSummary.textContent =
+          'Consulta un pedido para sincronizar su estatus.';
+      }
+      if (elements.trackingFeedback) {
+        elements.trackingFeedback.innerHTML = '';
+        elements.trackingFeedback.hidden = true;
+      }
+      elements.timelineSteps.forEach((step) => {
+        step.classList.remove('is-done', 'is-active');
+      });
+    }
+
+    function statusStep(status) {
+      const normalized = String(status || '').toLowerCase();
+
+      if (normalized.includes('entregado')) return 4;
+      if (
+        normalized.includes('camino') ||
+        normalized.includes('reparto') ||
+        normalized.includes('tránsito') ||
+        normalized.includes('transito')
+      ) {
+        return 3;
+      }
+      if (normalized.includes('prepar') || normalized.includes('proces')) return 2;
+      return 1;
+    }
+
     function renderAnswer(data, container) {
       container.innerHTML = '';
 
@@ -568,6 +750,30 @@
         login(elements.username ? elements.username.value : '', elements.password ? elements.password.value : '');
       });
     }
+
+    if (elements.trackingForm) {
+      elements.trackingForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!state.session) return;
+
+        const submit = elements.trackingForm.querySelector('button[type="submit"]');
+        trackOrder(
+          elements.trackingInput ? elements.trackingInput.value : '',
+          elements.trackingFeedback,
+          submit,
+          { feedback: true }
+        );
+      });
+    }
+
+    doc.querySelectorAll('[data-quick-question]').forEach((trigger) => {
+      trigger.addEventListener('click', () => {
+        openQuestionByType(
+          trigger.dataset.quickQuestion,
+          trigger.dataset.quickPrompt || ''
+        );
+      });
+    });
 
     if (elements.logoutButton) {
       elements.logoutButton.addEventListener('click', logout);

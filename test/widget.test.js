@@ -293,6 +293,50 @@ test('PA-4: al ingresar un ID válido se muestra el estatus y la ubicación', as
   dom.window.close();
 });
 
+test('PA-4: el buscador principal actualiza el timeline del dashboard', async () => {
+  const { dom, doc, api } = await setupWidget({ authenticated: true });
+
+  doc.getElementById('tracking-input').value = 'PED-1001';
+  doc.getElementById('tracking-search-form').dispatchEvent(
+    new dom.window.Event('submit', { bubbles: true, cancelable: true })
+  );
+
+  await waitFor(() => Boolean(doc.querySelector('#tracking-feedback .order-card')));
+
+  assert.match(doc.getElementById('tracking-feedback').textContent, /Pedido PED-1001/);
+  assert.match(doc.getElementById('showcase-order-id').textContent, /PED-1001/);
+  assert.equal(doc.getElementById('showcase-status').textContent, 'En camino');
+  assert.match(doc.getElementById('showcase-location').textContent, /Guadalajara/);
+  assert.match(doc.getElementById('assistant-summary').textContent, /PED-1001/);
+  assert.ok(
+    doc.querySelector('#showcase-timeline .timeline-step[data-step="3"].is-active')
+  );
+
+  const trackCall = api.calls.find((call) => call.url === '/api/orders/track');
+  assert.ok(trackCall);
+  assert.equal(trackCall.options.headers.Authorization, 'Bearer jwt-ana');
+
+  dom.window.close();
+});
+
+test('PA-3: las consultas frecuentes abren la pregunta correspondiente del chat', async () => {
+  const { dom, doc } = await setupWidget({ authenticated: true });
+
+  doc
+    .querySelector('.quick-pill[data-quick-question="free-text"]')
+    .click();
+
+  await waitFor(() => Boolean(doc.getElementById('question-form')));
+
+  assert.equal(doc.getElementById('chat-panel').hidden, false);
+  assert.match(
+    doc.getElementById('order-question').value,
+    /tiempo estimado de entrega/i
+  );
+
+  dom.window.close();
+});
+
 test('PA-4: un ID inexistente muestra un mensaje de error en el widget', async () => {
   const { dom, doc } = await setupWidget({ authenticated: true });
 
